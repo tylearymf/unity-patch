@@ -28,13 +28,13 @@ namespace Patcher
         /// <summary>
         /// The Version of the Unity Installation
         /// </summary>
-        public string Version => Path.GetFileName(_installationLocation);
+        public virtual string Version => Path.GetFileName(_installationLocation);
 
         /// <summary>
         /// Gets the Path to the Unity executable on the disk.
         /// </summary>
         /// <returns></returns>
-        public string ExecutablePath() => Path.Combine(_installationLocation, _operatingSystem switch
+        public virtual string ExecutablePath() => Path.Combine(_installationLocation, _operatingSystem switch
         {
             OperatingSystem.Windows => @"Editor\Unity.exe",
             OperatingSystem.MacOS => "Unity.app/Contents/MacOS/Unity",
@@ -42,12 +42,12 @@ namespace Patcher
             _ => throw new ArgumentOutOfRangeException(nameof(_operatingSystem))
         });
 
-        public bool IsSupported(IEnumerable<PatchInfo> patches)
+        public virtual bool IsSupported(IEnumerable<PatchInfo> patches)
         {
             return GetPatch(patches) != null;
         }
 
-        public PatchInfo GetPatch(IEnumerable<PatchInfo> patches)
+        public virtual PatchInfo GetPatch(IEnumerable<PatchInfo> patches)
         {
             foreach (PatchInfo patch in patches)
             {
@@ -71,13 +71,32 @@ namespace Patcher
             };
 
             if (!Directory.Exists(path)) yield break;
-            
+
             var directories = Directory.GetDirectories(path);
             Array.Sort(directories);
             foreach (string directory in directories)
             {
                 yield return new UnityInstallation(directory, operatingSystem);
             }
+
+            yield return new AdvanceModeInstallation(string.Empty, operatingSystem);
+        }
+    }
+
+    public class AdvanceModeInstallation : UnityInstallation
+    {
+        public AdvanceModeInstallation(string installationLocation, OperatingSystem operatingSystem) : base(installationLocation, operatingSystem)
+        {
+        }
+
+        public override string Version => "Advance Mode";
+        public override bool IsSupported(IEnumerable<PatchInfo> patches) => true;
+        public override PatchInfo GetPatch(IEnumerable<PatchInfo> patches) => null;
+
+        public override string ExecutablePath()
+        {
+            Console.WriteLine("Please enter the file path of Unity.exe:");
+            return Console.ReadLine();
         }
     }
 }

@@ -174,6 +174,8 @@ namespace Patcher
                 Console.WriteLine(
                     "Could not open the Unity executable - are you running the patcher as an administrator?");
             }
+
+            Console.ReadKey();
         }
 
         private static void CreateBackup(FileSystemInfo fileInfo, MemoryStream ms)
