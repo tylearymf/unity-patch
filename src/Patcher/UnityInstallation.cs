@@ -70,13 +70,14 @@ namespace Patcher
                 _ => throw new ArgumentOutOfRangeException(nameof(operatingSystem))
             };
 
-            if (!Directory.Exists(path)) yield break;
-
-            var directories = Directory.GetDirectories(path);
-            Array.Sort(directories);
-            foreach (string directory in directories)
+            if (Directory.Exists(path))
             {
-                yield return new UnityInstallation(directory, operatingSystem);
+                var directories = Directory.GetDirectories(path);
+                Array.Sort(directories);
+                foreach (string directory in directories)
+                {
+                    yield return new UnityInstallation(directory, operatingSystem);
+                }
             }
 
             yield return new AdvanceModeInstallation(string.Empty, operatingSystem);

@@ -147,7 +147,7 @@ namespace Patcher
 
             try
             {
-                var fileInfo = new FileInfo(fileLocation);
+                var fileInfo = new FileInfo(fileLocation.Trim('"'));
 
                 if (!fileInfo.Exists)
                 {
@@ -167,7 +167,24 @@ namespace Patcher
                 fs.CopyTo(ms);
 
                 CreateBackup(fileInfo, ms);
-                PatchExecutable(ms, fs, patch, themeName, force);
+                var success = PatchExecutable(ms, fs, patch, themeName, force);
+
+                if (success)
+                {
+                    var folder = "C:/ProgramData/Unity";
+                    if (!Directory.Exists(folder))
+                        Directory.CreateDirectory(folder);
+
+                    var file = Path.Combine(folder, "Unity_lic.ulf");
+                    if (!File.Exists(file))
+                    {
+                        var stream = typeof(UnityInstallation).Assembly.GetManifestResourceStream("Patcher.license.txt");
+                        var streamReader = new StreamReader(stream);
+                        var licenseContent = streamReader.ReadToEnd();
+                        streamReader.Close();
+                        File.WriteAllText(file, licenseContent);
+                    }
+                }
             }
             catch (UnauthorizedAccessException)
             {
@@ -188,15 +205,15 @@ namespace Patcher
                 backupFileInfo.Delete();
 
             using var backupWriteStream = backupFileInfo.OpenWrite();
-            
-                backupWriteStream.Write(ms.ToArray(), 0, (int)ms.Length);
-            
+
+            backupWriteStream.Write(ms.ToArray(), 0, (int)ms.Length);
+
 
             if (backupFileInfo.Exists)
                 Console.WriteLine($"Backup '{backupFileInfo.Name}' created.");
         }
 
-        private static void PatchExecutable(MemoryStream ms, FileStream fs, PatchInfo patch, string themeName,
+        private static bool PatchExecutable(MemoryStream ms, FileStream fs, PatchInfo patch, string themeName,
             bool force)
         {
             Console.WriteLine("Searching for theme offset...");
@@ -212,7 +229,7 @@ namespace Patcher
             if (!found)
             {
                 Console.WriteLine("Error: Could not find the theme offset in the specified executable!");
-                return;
+                return false;
             }
 
             var foundMultipleOffsets = offsets.Count > 1;
@@ -224,7 +241,7 @@ namespace Patcher
                     "Run the patcher with the --force option if you want to patch regardless of this warning.");
 
                 if (!force)
-                    return;
+                    return false;
             }
 
             var themeBytes = themeName == "dark" ? patch.DarkPattern : patch.LightPattern;
@@ -232,15 +249,16 @@ namespace Patcher
             Console.WriteLine($"Patching to {themeName}...");
 
             foreach (var offset in offsets)
-            
+
                 for (var i = 0; i < themeBytes.Length; i++)
                 {
                     fs.Position = offset + i;
                     fs.WriteByte(themeBytes[i]);
                 }
-            
+
 
             Console.WriteLine("Unity was successfully patched. Enjoy!");
+            return true;
         }
 
         private static IEnumerable<int> FindPattern(byte[] needle, byte[] haystack)

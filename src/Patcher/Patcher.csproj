@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="license.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="license.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Properties\PublishProfiles\" />
   </ItemGroup>
 
